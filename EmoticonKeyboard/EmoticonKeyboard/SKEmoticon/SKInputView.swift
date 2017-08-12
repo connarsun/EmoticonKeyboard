@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol SKInputViewDelegate: class, NSObjectProtocol {
+protocol SKInputViewDelegate: class {
     func inputView(_ inputView: SKInputView, sendText text: String)
 }
 
@@ -25,6 +25,8 @@ class SKInputView: UIView {
     fileprivate var textViewX: CGFloat = 5
     fileprivate var textViewY: CGFloat = 8.0
     
+    fileprivate var textViewOriginalFrame: CGRect!
+    fileprivate var inputViewOriginalFrame: CGRect!
     
     fileprivate lazy var emoticonView: SKEmoticonView = {
         var titles = [String]()
@@ -49,6 +51,7 @@ class SKInputView: UIView {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        textView.removeObserver(self, forKeyPath: "text")
     }
 }
 
@@ -60,11 +63,13 @@ fileprivate extension SKInputView {
         let w = bounds.width - x * 2 - h - x
         let tfFrame = CGRect(x: x, y: y, width: w, height: h)
         
+        textViewOriginalFrame = tfFrame
         textView = UITextView(frame: tfFrame)
         textView.delegate = self
         textView.textAlignment = .left
         textView.font = UIFont.systemFont(ofSize: 15)
         textView.returnKeyType = .send
+        textView.addObserver(self, forKeyPath: "text", options: .new, context: nil)
         addSubview(textView!)
         
         let emoticonBtn = UIButton(frame: CGRect(x: tfFrame.width + x * 2,
@@ -95,6 +100,7 @@ fileprivate extension SKInputView {
         UIView.animate(withDuration: keyBoardDuration) {
             self.frame = aFrame
         }
+        inputViewOriginalFrame = aFrame
     }
     
     @objc func keyboardWillHide(_ noti: Notification) {
@@ -112,6 +118,18 @@ fileprivate extension SKInputView {
         textView.reloadInputViews()
         
         textView.becomeFirstResponder()
+    }
+}
+
+extension SKInputView {
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        // 发送后，回复原始frame
+        if keyPath == "text" {
+            UIView.animate(withDuration: 0.25, animations: {
+                self.frame = self.inputViewOriginalFrame
+                self.textView.frame = self.textViewOriginalFrame
+            })
+        }
     }
 }
 
