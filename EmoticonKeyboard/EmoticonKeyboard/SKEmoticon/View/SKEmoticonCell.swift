@@ -53,6 +53,13 @@ class SKEmoticonCell: UICollectionViewCell {
             } else {
                 imageView.image = emoticon!.image
             }
+            
+            // 添加的空的图片，禁止用户交互
+            if emoticon!.isEmpty {
+                imageView.isUserInteractionEnabled = false
+            } else {
+                imageView.isUserInteractionEnabled = true
+            }
         }
     }
     override init(frame: CGRect) {
